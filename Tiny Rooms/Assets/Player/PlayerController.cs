@@ -5,195 +5,318 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     // Movement variables
-    public float walkSpeed = 5f; // Walking speed
-    public float sprintSpeed = 8f; // Sprinting speed
-    public float crouchSpeed = 2.5f; // Crouching speed
-    public float jumpForce = 5f; // Jump force
-    public float gravity = -9.81f; // Gravity strength
+    public float walkSpeed = 5f; // Normal movement speed
+    public float sprintSpeed = 8f; // Speed when sprinting
+    public float crouchSpeed = 2.5f; // Speed when crouching
+    public float jumpForce = 8f; // Initial upward force for jumping
+    public float gravity = -9.81f; // Base gravitational force
+    public float gravityScaleAscending = 0.7f; // Gravity multiplier when going up
+    public float gravityScaleDescending = 2f; // Gravity multiplier when falling down
 
     // Camera variables
-    public Transform cameraTransform; // Reference to the player's camera transform
+    public Transform cameraTransform;
     public float mouseSensitivityX = 100f; // Mouse sensitivity for horizontal rotation
     public float mouseSensitivityY = 100f; // Mouse sensitivity for vertical rotation
 
     // Camera bobbing variables
-    public float bobbingSpeed = 5f; // Speed of bobbing
-    public float bobbingAmountHorizontal = 0.05f; // Horizontal bobbing amount
-    public float bobbingAmountVertical = 0.02f; // Vertical bobbing amount
-    public float sprintBobbingMultiplier = 1.5f; // Multiplier to increase bobbing when sprinting
+    public float bobbingSpeed = 5f; // Speed of camera bobbing
+    public float bobbingAmountHorizontal = 0.05f; // Horizontal bobbing amplitude
+    public float bobbingAmountVertical = 0.02f; // Vertical bobbing amplitude
+    public float sprintBobbingMultiplier = 1.5f; // Bobbing speed multiplier during sprinting
+
+    // Jump landing bobbing variables
+    public float landingBobbingAmount = 0.1f; // Vertical bobbing when landing
+    public float landingBobbingSpeed = 6f; // Speed of landing bobbing recovery
 
     // Camera FOV adjustment for sprinting
-    public Camera playerCamera; // Reference to the camera to change FOV
-    public float defaultFOV = 60f; // Default field of view
-    public float sprintFOV = 75f; // Field of view when sprinting
-    public float fovTransitionSpeed = 5f; // Speed at which FOV transitions
+    public Camera playerCamera;
+    public float defaultFOV = 60f; // Normal field of view
+    public float sprintFOV = 75f; // FOV while sprinting
+    public float fovTransitionSpeed = 5f; // Speed of FOV transitions
 
     // Components
-    private CharacterController characterController; // Reference to CharacterController component
+    private CharacterController characterController;
 
     // State variables
-    private Vector3 velocity; // To store the current velocity, including gravity
-    private bool isGrounded; // To check if the player is grounded
-    private float currentSpeed; // To store the current movement speed (walking, sprinting, crouching)
-    private float bobbingTimer = 0f; // Timer to control the bobbing animation
-    private float xRotation = 0f; // To store the camera's vertical rotation
+    private Vector3 velocity;
+    private bool isGrounded;
+    private float currentSpeed;
+    private float bobbingTimer = 0f;
+    private float xRotation = 0f;
 
     // Camera bobbing state
-    private Vector3 cameraDefaultPosition; // To store the camera's initial position for resetting bobbing
+    private Vector3 cameraDefaultPosition;
+    private bool landingEffectActive = false;
+    private bool hasJumped = false;
+
+
+
+
+
+    
+    public GameObject eIndicatorPrefab; // Prefab for the "E" indicator
+    public float interactionRange = 3f; // Distance at which objects are considered nearby
+    private GameObject eIndicatorInstance; // Active instance of the "E" indicator
+    private Transform currentInteractable; // The interactable object in focus
+
+
 
     void Start()
     {
-        // Initialize the character controller
         characterController = GetComponent<CharacterController>();
-
-        // Store the camera's default position (for later use when resetting bobbing)
         if (cameraTransform != null)
         {
             cameraDefaultPosition = cameraTransform.localPosition;
         }
-
-        // Lock the cursor and hide it to enhance immersion
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
     void Update()
     {
-        // Handle movement, camera rotation, jumping, gravity, bobbing, and FOV adjustment
         HandleMovement();
         HandleMouseLook();
         HandleJumping();
         ApplyGravity();
         HandleCameraBobbing();
         HandleFOV();
+        DetectNearbyObjects();
+        HandleInteraction();
     }
 
-    // Handles player movement (walking, sprinting, crouching)
     void HandleMovement()
     {
-        // Check if the player is grounded
+        // Grounded check
         isGrounded = characterController.isGrounded;
-
-        // If the player is grounded and falling, set a small downward force to keep them grounded
-        if (isGrounded && velocity.y < 0)
+        if (isGrounded)
         {
-            velocity.y = -2f;
+            if (velocity.y < 0)
+            {
+                velocity.y = -2f;
+
+                // Trigger landing effect only after a jump
+                if (hasJumped && !landingEffectActive)
+                {
+                    StartCoroutine(LandingBobbingEffect());
+                    hasJumped = false; // Reset jump state after landing
+                }
+            }
         }
 
-        // Get input for horizontal (left/right) and vertical (forward/backward) movement
+        // Input for movement
         float moveX = Input.GetAxis("Horizontal");
         float moveZ = Input.GetAxis("Vertical");
-
-        // Create a movement vector based on input and transform it relative to the player's orientation
         Vector3 move = transform.right * moveX + transform.forward * moveZ;
 
-        // Adjust movement speed based on sprinting or crouching
-        if (Input.GetKey(KeyCode.LeftShift)) // Sprinting
+        // Determine movement speed
+        if (Input.GetKey(KeyCode.LeftShift))
         {
             currentSpeed = sprintSpeed;
         }
-        else if (Input.GetKey(KeyCode.LeftControl)) // Crouching
+        else if (Input.GetKey(KeyCode.LeftControl))
         {
             currentSpeed = crouchSpeed;
         }
-        else // Walking
+        else
         {
             currentSpeed = walkSpeed;
         }
 
-        // Move the player using the CharacterController
+        // Move the player
         characterController.Move(move * currentSpeed * Time.deltaTime);
     }
 
-    // Handles camera rotation based on mouse input
     void HandleMouseLook()
     {
-        // Get mouse input for horizontal and vertical camera rotation
+        // Get mouse input
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivityX * Time.deltaTime;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivityY * Time.deltaTime;
 
-        // Rotate the player horizontally (left/right)
+        // Rotate the player horizontally
         transform.Rotate(Vector3.up * mouseX);
 
-        // Rotate the camera vertically (up/down) and clamp it to prevent flipping
+        // Rotate the camera vertically
         xRotation -= mouseY;
-        xRotation = Mathf.Clamp(xRotation, -90f, 90f); // Prevent the camera from rotating too far
-        cameraTransform.localRotation = Quaternion.Euler(xRotation, 0f, 0f); // Apply vertical rotation to camera
+        xRotation = Mathf.Clamp(xRotation, -90f, 90f); // Prevent flipping
+        cameraTransform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
     }
 
-    // Handles jumping mechanics
     void HandleJumping()
     {
-        // Allow the player to jump only if they are on the ground
         if (Input.GetButtonDown("Jump") && isGrounded)
         {
-            // Apply jump force using the physics formula for velocity
-            velocity.y = Mathf.Sqrt(jumpForce * -2f * gravity);
+            velocity.y = Mathf.Sqrt(jumpForce * -2f * gravity); // Initial upward force
+            hasJumped = true; // Mark as jumped
         }
     }
 
-    // Applies gravity to the player, pulling them down when not grounded
     void ApplyGravity()
     {
-        // Apply gravity over time
-        velocity.y += gravity * Time.deltaTime;
+        // Simulate non-linear gravity effect
+        if (velocity.y > 0) // Ascending
+        {
+            velocity.y += gravity * gravityScaleAscending * Time.deltaTime; // Slower gravity upward
+        }
+        else // Descending
+        {
+            velocity.y += gravity * gravityScaleDescending * Time.deltaTime; // Faster gravity downward
+        }
 
-        // Move the player using the CharacterController, including gravity
         characterController.Move(velocity * Time.deltaTime);
     }
 
-    // Handles the camera bobbing effect when the player is moving
     void HandleCameraBobbing()
     {
-        // Make sure the camera reference is not null
         if (cameraTransform == null) return;
 
-        // Determine if the player is moving (horizontal or vertical movement)
+        // Determine if the player is moving
         float moveX = Input.GetAxis("Horizontal");
         float moveZ = Input.GetAxis("Vertical");
         bool isMoving = moveX != 0 || moveZ != 0;
 
-        // Apply bobbing only when the player is moving and grounded
         if (isMoving && isGrounded)
         {
-            // Increase the bobbing timer, considering sprinting for faster bobbing
+            // Increment bobbing timer
             bobbingTimer += Time.deltaTime * (currentSpeed == sprintSpeed ? bobbingSpeed * sprintBobbingMultiplier : bobbingSpeed);
 
-            // Calculate the horizontal and vertical bobbing offsets using sine and cosine for smooth movement
+            // Calculate bobbing offsets
             float horizontalOffset = Mathf.Sin(bobbingTimer) * bobbingAmountHorizontal;
             float verticalOffset = Mathf.Cos(bobbingTimer * 2f) * bobbingAmountVertical; // Higher frequency for vertical movement
 
-            // Apply the calculated bobbing offsets to the camera's position
+            // Apply offsets to camera position
             cameraTransform.localPosition = new Vector3(
                 cameraDefaultPosition.x + horizontalOffset,
                 cameraDefaultPosition.y + verticalOffset,
                 cameraDefaultPosition.z
             );
         }
-        else
+        else if (!landingEffectActive)
         {
-            // Smoothly return the camera to its default position when the player stops moving
+            // Smoothly return camera to default position
             cameraTransform.localPosition = Vector3.Lerp(
                 cameraTransform.localPosition,
                 cameraDefaultPosition,
                 Time.deltaTime * bobbingSpeed
             );
-
-            // Reset the bobbing timer when the player is stationary
-            bobbingTimer = 0;
+            bobbingTimer = 0; // Reset timer when stationary
         }
     }
 
-    // Adjust the camera's field of view based on whether the player is sprinting
+    IEnumerator LandingBobbingEffect()
+    {
+        landingEffectActive = true;
+
+        // Bob the camera down slightly
+        float elapsed = 0f;
+        while (elapsed < 0.1f)
+        {
+            cameraTransform.localPosition = Vector3.Lerp(cameraDefaultPosition,
+                cameraDefaultPosition - new Vector3(0, landingBobbingAmount, 0),
+                elapsed / 0.1f);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        // Return the camera to its default position
+        elapsed = 0f;
+        while (elapsed < 0.1f)
+        {
+            cameraTransform.localPosition = Vector3.Lerp(
+                cameraTransform.localPosition,
+                cameraDefaultPosition,
+                elapsed / 0.1f);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        landingEffectActive = false;
+    }
+
     void HandleFOV()
     {
-        // Make sure the playerCamera reference is not null
         if (playerCamera == null) return;
 
-        // Set the target FOV based on whether the player is sprinting or not
         float targetFOV = (currentSpeed == sprintSpeed) ? sprintFOV : defaultFOV;
-
-        // Smoothly transition the camera's FOV to the target FOV
         playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * fovTransitionSpeed);
+    }
+
+
+    void DetectNearbyObjects()
+    {
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, interactionRange);
+
+        bool foundInteractable = false; // Track if an interactable was found
+
+        foreach (var collider in hitColliders)
+        {
+            if (collider.CompareTag("Interactable"))
+            {
+                ShowEIndicator(collider.transform);
+                foundInteractable = true;
+                break; // Stop checking further
+            }
+        }
+
+        if (!foundInteractable) // No interactable objects nearby
+        {
+            HideEIndicator();
+        }
+    }
+
+
+    void HandleInteraction()
+    {
+        if (currentInteractable == null || eIndicatorInstance == null) return;
+
+        // Check if the player is pointing at the object
+        Ray ray = playerCamera.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2)); // Center of the screen
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit) && hit.transform == currentInteractable)
+        {
+            if (Input.GetKeyDown(KeyCode.E))
+            {
+                InteractWithObject(currentInteractable.gameObject);
+            }
+        }
+    }
+
+    void ShowEIndicator(Transform target)
+    {
+
+
+        if (eIndicatorInstance == null)
+        {
+            eIndicatorInstance = Instantiate(eIndicatorPrefab); // Create the indicator instance
+        }
+
+        // Ensure the indicator is active and position it correctly
+        eIndicatorInstance.SetActive(true);
+        eIndicatorInstance.transform.position = target.position + Vector3.up * 0.1f; // Position above the object
+        eIndicatorInstance.transform.LookAt(playerCamera.transform); // Ensure it faces the player
+
+
+        // Flip the object by rotating it 180 degrees on the y-axis
+        eIndicatorInstance.transform.Rotate(0f, 180f, 0f); // Flip the object 180 degrees on the y-axis
+
+        currentInteractable = target; // Set the current interactable
+
+    }
+
+    void HideEIndicator()
+    {
+        if (eIndicatorInstance != null)
+        {
+            eIndicatorInstance.SetActive(false); // Hide the indicator completely
+        }
+
+        currentInteractable = null; // Clear the current interactable reference
+    }
+
+
+    void InteractWithObject(GameObject interactableObject)
+    {
+        Debug.Log($"Interacted with: {interactableObject.name}");
+        // Add specific interaction logic here
     }
 }
