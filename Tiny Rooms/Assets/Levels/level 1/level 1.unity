@@ -5033,12 +5033,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 406978393}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 706ec9407e93207448c93cfbe4634aac, type: 3}
+  m_Script: {fileID: 11500000, guid: c3b31da9901920949afa683f8a547737, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pushForce: 0.2
-  upwardForce: 0.1
---- !u!114 &406978407
+  crosshair: {fileID: 731330136}
+--- !u!114 &406978401
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -5047,10 +5046,56 @@ MonoBehaviour:
   m_GameObject: {fileID: 406978393}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c3b31da9901920949afa683f8a547737, type: 3}
+  m_Script: {fileID: 11500000, guid: cd0698bb11326fb4a963c073be3701c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  crosshair: {fileID: 731330136}
+  playerCamera: {fileID: 1670751576}
+  eIndicatorPrefab: {fileID: 2006896488}
+  interactionRange: 3
+--- !u!114 &406978402
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 406978393}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 706ec9407e93207448c93cfbe4634aac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pushForce: 10
+  upwardForce: 2
+--- !u!114 &406978403
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 406978393}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f75c29ce5cf4e8044bf7037499b2c565, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  walkSpeed: 5
+  sprintSpeed: 8
+  crouchSpeed: 2.5
+  jumpForce: 4
+  gravity: -9.81
+  cameraTransform: {fileID: 1670751578}
+  mouseSensitivityX: 100
+  mouseSensitivityY: 100
+  playerCamera: {fileID: 1670751576}
+  defaultFOV: 80
+  sprintFOV: 100
+  fovTransitionSpeed: 5
+  bobbingSpeed: 5
+  bobbingAmountHorizontal: 1
+  bobbingAmountVertical: 0.1
+  sprintBobbingMultiplier: 1.5
+  landingBobbingAmount: 0.1
+  landingBobbingSpeed: 6
 --- !u!1 &408700991
 GameObject:
   m_ObjectHideFlags: 0
@@ -18488,6 +18533,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1272239805652986903, guid: 65fc18c270eda0b4082267f58bd40b31, type: 3}
+      propertyPath: m_Name
+      value: player cam
+      objectReference: {fileID: 0}
+    - target: {fileID: 1272239805652986903, guid: 65fc18c270eda0b4082267f58bd40b31, type: 3}
       propertyPath: m_TagString
       value: MainCamera
       objectReference: {fileID: 0}
@@ -18523,7 +18572,8 @@ PrefabInstance:
       propertyPath: m_TagString
       value: Player
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 5845412788498056851, guid: 65fc18c270eda0b4082267f58bd40b31, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
@@ -18532,10 +18582,16 @@ PrefabInstance:
       addedObject: {fileID: 406978399}
     - targetCorrespondingSourceObject: {fileID: 7391638374304317644, guid: 65fc18c270eda0b4082267f58bd40b31, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 406978400}
+      addedObject: {fileID: 406978403}
     - targetCorrespondingSourceObject: {fileID: 7391638374304317644, guid: 65fc18c270eda0b4082267f58bd40b31, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 406978407}
+      addedObject: {fileID: 406978402}
+    - targetCorrespondingSourceObject: {fileID: 7391638374304317644, guid: 65fc18c270eda0b4082267f58bd40b31, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 406978401}
+    - targetCorrespondingSourceObject: {fileID: 7391638374304317644, guid: 65fc18c270eda0b4082267f58bd40b31, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 406978400}
   m_SourcePrefab: {fileID: 100100000, guid: 65fc18c270eda0b4082267f58bd40b31, type: 3}
 --- !u!1 &1414892053
 GameObject:
@@ -21703,6 +21759,16 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 8460917321318470221, guid: 3964c23ae9838e84889ea6d65b5861aa, type: 3}
   m_PrefabInstance: {fileID: 509390197}
+  m_PrefabAsset: {fileID: 0}
+--- !u!20 &1670751576 stripped
+Camera:
+  m_CorrespondingSourceObject: {fileID: 4267938395079507583, guid: 65fc18c270eda0b4082267f58bd40b31, type: 3}
+  m_PrefabInstance: {fileID: 1413718831}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1670751578 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8982374449349741473, guid: 65fc18c270eda0b4082267f58bd40b31, type: 3}
+  m_PrefabInstance: {fileID: 1413718831}
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &1679516941 stripped
 Transform:

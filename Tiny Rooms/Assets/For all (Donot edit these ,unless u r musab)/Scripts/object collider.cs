@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class ObjectPusher : MonoBehaviour
 {
-    public float pushForce = 10f; // Horizontal force applied to the object
-    public float upwardForce = 2f; // Upward force for a realistic effect
+    public float pushForce = 2f; // Horizontal force applied to the object
+    public float upwardForce = 0.5f; // Upward force for a realistic effect
 
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
