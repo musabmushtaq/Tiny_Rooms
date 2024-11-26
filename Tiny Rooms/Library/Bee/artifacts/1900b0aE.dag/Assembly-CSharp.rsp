@@ -355,6 +355,7 @@
 -analyzer:"C:/Program Files/Unity/Hub/Editor/2022.3.37f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.SourceGenerators.dll"
 "Assets/For all (Donot edit these ,unless u r musab)/Scripts/crosshair.cs"
 "Assets/For all (Donot edit these ,unless u r musab)/Scripts/interation module.cs"
+"Assets/For all (Donot edit these ,unless u r musab)/Scripts/Item showcase.cs"
 "Assets/For all (Donot edit these ,unless u r musab)/Scripts/object collider.cs"
 "Assets/For all (Donot edit these ,unless u r musab)/Scripts/player controller.cs"
 -langversion:9.0

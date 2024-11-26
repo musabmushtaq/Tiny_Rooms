@@ -4,25 +4,17 @@ using UnityEngine;
 
 public class basic_interaction : MonoBehaviour
 {
-
-
     public Camera playerCamera;
     public GameObject eIndicatorPrefab; // Prefab for the "E" indicator
     public float interactionRange = 3f; // Distance at which objects are considered nearby
     private GameObject eIndicatorInstance; // Active instance of the "E" indicator
     private Transform currentInteractable; // The interactable object in focus
 
-
-
- 
     void Update()
     {
-        
         DetectNearbyObjects();
         HandleInteraction();
     }
-
-    
 
     void DetectNearbyObjects()
     {
@@ -46,7 +38,6 @@ public class basic_interaction : MonoBehaviour
         }
     }
 
-
     void HandleInteraction()
     {
         if (currentInteractable == null || eIndicatorInstance == null) return;
@@ -59,15 +50,22 @@ public class basic_interaction : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.E))
             {
-                InteractWithObject(currentInteractable.gameObject);
+                // Call the specific object's interaction script
+                InteractableDisplay displayScript = currentInteractable.GetComponent<InteractableDisplay>();
+                if (displayScript != null)
+                {
+                    displayScript.TriggerDisplay();
+                }
+                else
+                {
+                    Debug.Log($"Interacted with: {currentInteractable.gameObject.name}");
+                }
             }
         }
     }
 
     void ShowEIndicator(Transform target)
     {
-
-
         if (eIndicatorInstance == null)
         {
             eIndicatorInstance = Instantiate(eIndicatorPrefab); // Create the indicator instance
@@ -78,12 +76,10 @@ public class basic_interaction : MonoBehaviour
         eIndicatorInstance.transform.position = target.position + Vector3.up * 0.1f; // Position above the object
         eIndicatorInstance.transform.LookAt(playerCamera.transform); // Ensure it faces the player
 
-
         // Flip the object by rotating it 180 degrees on the y-axis
         eIndicatorInstance.transform.Rotate(0f, 180f, 0f); // Flip the object 180 degrees on the y-axis
 
         currentInteractable = target; // Set the current interactable
-
     }
 
     void HideEIndicator()
@@ -94,12 +90,5 @@ public class basic_interaction : MonoBehaviour
         }
 
         currentInteractable = null; // Clear the current interactable reference
-    }
-
-
-    void InteractWithObject(GameObject interactableObject)
-    {
-        Debug.Log($"Interacted with: {interactableObject.name}");
-        // Add specific interaction logic here
     }
 }
